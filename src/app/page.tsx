@@ -1,40 +1,20 @@
 'use client';
-import { useEffect, useState } from 'react';
+
+import { Input } from '@/components/Input';
 
 export default function Home() {
-  const [ping, setPing] = useState<string>('loading…');
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const res = await fetch('/api/health', { cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const text = await res.text();
-        if (!cancelled) setPing(text);
-      } catch (e: any) {
-        if (!cancelled) {
-          setError(e?.message ?? 'Failed to load');
-          setPing('');
-        }
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   return (
-    <div className="max-w-2xl space-y-4">
-      <h1 className="text-2xl font-semibold">Wiki Generator</h1>
-      <p className="text-sm text-gray-600">API status:</p>
-      {error ? (
-        <p className="text-red-600">{error}</p>
-      ) : (
-        <p className="rounded p-3">{ping}</p>
-      )}
+    <div className="min-h-screen flex items-center justify-center p-8">
+      <div className="max-w-2xl w-full space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold tracking-tight">Wiki Generator</h1>
+          <p className="text-gray-600">
+            Generate comprehensive documentation for any GitHub repository
+          </p>
+        </div>
+
+        <Input />
+      </div>
     </div>
   );
 }
