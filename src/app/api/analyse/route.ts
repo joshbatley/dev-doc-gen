@@ -2,9 +2,10 @@ import {NextRequest} from 'next/server';
 import {
   hasWikiBeenGenerated,
   createJob,
-  updateJobStatus
+  updateJobStatus, createWikiDoc, updateWikiIdForJob
 } from "@/client/database";
-import {JobStatus} from "@/types";
+import {JobStatus, ReadPackage, ReadTarget, SeedDoc, SeedPackage, Slice} from "@/types";
+import {runBackgroundService} from "@/services/backgroundService";
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
 
 
     const jobId = await createJob(repo)
-    runBackgroundJob(repo, jobId).catch(async () => {
+    runBackgroundService(repo, jobId).catch(async () => {
       await updateJobStatus(jobId, JobStatus.FAILED)
     })
 
@@ -52,9 +53,4 @@ export async function GET(request: NextRequest) {
       {status: 500}
     );
   }
-}
-
-async function runBackgroundJob(repo: string, jobId: string) {
-  // Noop of setup
-  return;
 }
