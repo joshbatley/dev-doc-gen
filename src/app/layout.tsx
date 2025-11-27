@@ -10,9 +10,6 @@ export default function RootLayout({children}: Readonly<{ children: React.ReactN
   return (
     <html lang="en">
       <body>
-        <header style={{padding: 16, borderBottom: '1px solid #eee'}}>
-          <strong>Wiki Generator</strong>
-        </header>
         <main style={{padding: 16}}>{children}</main>
       </body>
     </html>
