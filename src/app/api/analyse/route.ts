@@ -1,6 +1,10 @@
-
-import { NextRequest } from 'next/server';
-import {fetchRepoInfo} from "@/client/github";
+import {NextRequest} from 'next/server';
+import {
+  hasWikiBeenGenerated,
+  createJob,
+  updateJobStatus
+} from "@/client/database";
+import {JobStatus} from "@/types";
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,45 +13,48 @@ export async function GET(request: NextRequest) {
 
     if (!repo) {
       return Response.json(
-        { error: 'Repository parameter is required' },
-        { status: 400 }
+        {error: 'Repository parameter is required'},
+        {status: 400}
       );
     }
 
     const repoPattern = /^[\w.-]+\/[\w.-]+$/;
     if (!repoPattern.test(repo)) {
       return Response.json(
-        { error: 'Invalid repository format. Expected: owner/name' },
-        { status: 400 }
+        {error: 'Invalid repository format. Expected: owner/name'},
+        {status: 400}
       );
     }
 
-    const [owner, repoName] = repo.split('/');
+    const generatedWiki = await hasWikiBeenGenerated(repo);
+    if (generatedWiki) {
+      console.log('repoAlreadyGenerate', generatedWiki);
+      return Response.json({message: 'Repository already generate', wikiId: generatedWiki})
+    }
 
-    // Fetch repository information from GitHub
-    const repoInfo = await fetchRepoInfo(owner, repoName);
 
-    // Return 200 OK with repo info
+    const jobId = await createJob(repo)
+    runBackgroundJob(repo, jobId).catch(async () => {
+      await updateJobStatus(jobId, JobStatus.FAILED)
+    })
+
     return Response.json(
       {
         message: 'OK',
-        repository: repoInfo,
+        jobId: jobId,
       },
-      { status: 200 }
+      {status: 200}
     );
   } catch (error) {
     console.error('Analysis endpoint error:', error);
-
-    if (error instanceof Error) {
-      return Response.json(
-        { error: error.message },
-        { status: error.message.includes('not found') ? 404 : 500 }
-      );
-    }
-
     return Response.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      {error: 'Internal server error'},
+      {status: 500}
     );
   }
+}
+
+async function runBackgroundJob(repo: string, jobId: string) {
+  // Noop of setup
+  return;
 }
