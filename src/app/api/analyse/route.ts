@@ -5,7 +5,7 @@ import {
   updateJobStatus, createWikiDoc, updateWikiIdForJob
 } from "@/client/database";
 import {JobStatus, ReadPackage, ReadTarget, SeedDoc, SeedPackage, Slice} from "@/types";
-import {runBackgroundService} from "@/services/backgroundService";
+import runBackgroundService from "@/services/backgroundService";
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     const jobId = await createJob(repo)
     runBackgroundService(repo, jobId).catch(async () => {
-      await updateJobStatus(jobId, JobStatus.FAILED)
+      // should be impossible
     })
 
     return Response.json(
