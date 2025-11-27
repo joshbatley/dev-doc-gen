@@ -1,14 +1,9 @@
-import { createClient } from '@libsql/client';
-import { NextResponse } from 'next/server';
-
-const client = createClient({
-  url: process.env.TURSO_DATABASE_URL!,
-  authToken: process.env.TURSO_AUTH_TOKEN
-});
+import { neon } from '@neondatabase/serverless';
 
 export const Healthcheck = async () => {
   try {
-    await client.execute("SELECT 1");
+    const sql = neon(process.env.DATABASE_URL!);
+    await sql`SELECT 1`;
     return true;
   } catch (error) {
     return false;
