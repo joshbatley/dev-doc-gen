@@ -1,5 +1,5 @@
-import {neon} from '@neondatabase/serverless';
-import {JobStatus} from "@/types";
+import { neon } from '@neondatabase/serverless';
+import {JobStatus, JobUpdate} from "@/types";
 
 const sql = neon(process.env.DATABASE_URL!);
 
@@ -7,14 +7,15 @@ export async function hasWikiBeenGenerated(repo: string): Promise<string | null>
   const result = await sql`
     SELECT id
     FROM analysis_jobs
-    WHERE repository = ${repo} LIMIT 1
+    WHERE repository = ${repo}
+      LIMIT 1
   `;
 
   if (result.length != 0) {
     const wiki = await sql`
       SELECT id
       FROM wiki_docs
-      WHERE job_id = ${result[0].id}
+      WHERE job_id =  ${result[0].id}
     `
     return wiki[0].id;
   }
@@ -24,7 +25,8 @@ export async function hasWikiBeenGenerated(repo: string): Promise<string | null>
 export async function createJob(repository: string): Promise<string> {
   const result = await sql`
     INSERT INTO analysis_jobs (repository, status, created_at, updated_at, wiki_data_id)
-    VALUES (${repository}, ${JobStatus.PENDING}, NOW(), NOW(), NULL) RETURNING id
+    VALUES (${repository}, ${JobStatus.PENDING}, NOW(), NOW(), NULL)
+    RETURNING id
   `;
 
   return result[0].id;
@@ -33,8 +35,18 @@ export async function createJob(repository: string): Promise<string> {
 export async function updateJobStatus(jobId: string, status: JobStatus): Promise<void> {
   await sql`
     UPDATE analysis_jobs
-    SET status     = ${status},
-        updated_at = NOW()
+    SET status = ${status}, updated_at = NOW()
     WHERE id = ${jobId}
   `;
+}
+
+export async function getJobStatus(jobId: string): Promise<JobUpdate | null> {
+  const result  = await sql`
+    SELECT status, updated_at
+    FROM analysis_jobs
+    WHERE id = ${jobId}
+      LIMIT 1
+  `;
+
+  return result.length > 0 ? (result[0] as JobUpdate) : null;
 }

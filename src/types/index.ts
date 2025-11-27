@@ -7,3 +7,8 @@ export enum JobStatus {
   COMPLETE = 'complete',
   FAILED = 'failed',
 }
+
+export interface JobUpdate {
+  status: JobStatus;
+  updated_at: Date
+}
