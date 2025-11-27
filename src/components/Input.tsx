@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -28,11 +29,15 @@ export function Input() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any | null>(null);
+  const [jobStatus, setJobStatus] = useState<string | null>(null);
+  const [statusUpdates, setStatusUpdates] = useState<string>('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setResult(null);
+    setJobStatus(null);
+    setStatusUpdates('');
 
     // Parse the input
     const repo = parseRepoInput(input);
@@ -49,14 +54,54 @@ export function Input() {
 
       if (!response.ok) {
         setError(data.error || 'Failed to analyze repository');
+        setLoading(false);
         return;
       }
 
       setResult(data);
+
+      if (data.jobId) {
+        const eventSource = new EventSource(`/api/status?jobId=${data.jobId}`);
+
+        eventSource.onmessage = (event) => {
+          try {
+            const update = JSON.parse(event.data);
+
+            if (update.error) {
+              setError(update.error + (update.details ? `: ${update.details}` : ''));
+              eventSource.close();
+              setLoading(false);
+              return;
+            }
+
+            if (update.status) {
+              setJobStatus(update.status);
+              setStatusUpdates(
+                `[${new Date(update.updated_at).toLocaleTimeString()}] Status: ${update.status}`
+              );
+
+              // Close connection and stop loading when job is done
+              if (update.status === 'complete' || update.status === 'failed') {
+                eventSource.close();
+                setLoading(false);
+              }
+            }
+          } catch (err) {
+            console.error('Failed to parse SSE message:', err);
+          }
+        };
+
+        eventSource.onerror = () => {
+          setError('Connection to job status status failed');
+          eventSource.close();
+          setLoading(false);
+        };
+      } else {
+        setLoading(false);
+      }
     } catch (err) {
       setError('Failed to connect to server');
       console.error(err);
-    } finally {
       setLoading(false);
     }
   };
@@ -94,6 +139,21 @@ export function Input() {
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-md">
           <p className="text-sm text-red-800">{error}</p>
+        </div>
+      )}
+
+      {jobStatus && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm font-medium text-blue-800 mb-2">
+            Job Status: <span className="uppercase">{jobStatus}</span>
+          </p>
+          {statusUpdates.length > 0 && (
+            <div className="mt-2 space-y-1">
+                <p  className="text-xs text-gray-600 font-mono">
+                  {statusUpdates}
+                </p>
+            </div>
+          )}
         </div>
       )}
 
