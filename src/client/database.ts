@@ -23,7 +23,7 @@ export async function hasWikiBeenGenerated(repo: string): Promise<string | null>
 
 export async function createJob(repository: string): Promise<string> {
   const result = await sql`
-    INSERT INTO analysis_jobs (repository, status, created_at, updated_at, wiki_data_id)
+    INSERT INTO analysis_jobs (repository, status, created_at, updated_at, wiki_doc_id)
     VALUES (${repository}, ${JobStatus.PENDING}, NOW(), NOW(), NULL) RETURNING id
   `;
 
@@ -73,7 +73,7 @@ export async function createWikiDoc(
 export async function updateWikiIdForJob(jobId: string, wikiDocId: string): Promise<void> {
   await sql`
     UPDATE analysis_jobs
-    SET wiki_data_id = ${wikiDocId},
+    SET wiki_doc_id = ${wikiDocId},
         updated_at   = NOW(),
         WHERE id = ${jobId}
   `;
@@ -81,7 +81,7 @@ export async function updateWikiIdForJob(jobId: string, wikiDocId: string): Prom
 
 export async function getRecentJobs(limit: number = 10) {
   return sql`
-    SELECT id, repository, status, created_at, updated_at
+    SELECT id, repository, status, created_at, updated_at, wiki_doc_id
     FROM analysis_jobs
     ORDER BY created_at DESC
       LIMIT ${limit}

@@ -1,4 +1,5 @@
-import { Input } from '@/components/Input';
+import {Input} from '@/components/Input';
+import {Recent} from "@/components/Recent";
 
 export default async function Home() {
   return (
@@ -10,7 +11,10 @@ export default async function Home() {
             Generate comprehensive documentation for any GitHub repository
           </p>
         </div>
-        <Input />
+
+        <Input/>
+
+        <Recent/>
       </div>
     </div>
   );
